@@ -1,0 +1,192 @@
+/* ── AUTH SCREEN ──────────────────────────────────────────── */
+.auth-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f172a;
+}
+
+.auth-card {
+  background: #020617;
+  padding: 40px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-logo {
+  text-align: center;
+  font-size: 28px;
+  margin: 0;
+  background: linear-gradient(135deg, #1d4ed8, #9333ea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-subtitle {
+  text-align: center;
+  opacity: 0.5;
+  font-size: 13px;
+  margin: -8px 0 0 0;
+}
+
+.auth-input {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: white;
+  padding: 12px 15px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.auth-input:focus {
+  border-color: #3b82f6;
+}
+
+.auth-btn {
+  background: linear-gradient(135deg, #1d4ed8, #9333ea);
+  color: white;
+  border: none;
+  padding: 13px;
+  border-radius: 8px;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #3b82f6;
+}
+
+.auth-links span {
+  cursor: pointer;
+}
+
+.auth-links span:hover {
+  text-decoration: underline;
+}
+
+.auth-success {
+  background: #14532d;
+  color: #86efac;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.auth-error {
+  background: #450a0a;
+  color: #fca5a5;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+/* ── WALLET INPUTS ────────────────────────────────────────── */
+.wallet-input {
+  background: #0f172a;
+  border: 1px solid #334155;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+.wallet-input:focus {
+  border-color: #3b82f6;
+}
+
+/* ── FORM MESSAGES ────────────────────────────────────────── */
+.form-success {
+  color: #22c55e;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+.form-error {
+  color: #ef4444;
+  font-size: 13px;
+  margin: 4px 0;
+}
+
+/* ── ANALYTICS SUMMARY CARDS ─────────────────────────────── */
+.analytics-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.summary-card {
+  background: #1e293b;
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.summary-card span {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.summary-card strong {
+  font-size: 16px;
+}
+
+/* ── NOTIFICATION UNREAD ─────────────────────────────────── */
+.notification-item.unread {
+  border-left: 3px solid #3b82f6;
+  background: #0f172a;
+}
+
+/* ── SETTINGS FORM ITEMS ─────────────────────────────────── */
+.setting-item.setting-form {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.setting-item.setting-form h4 {
+  margin: 0 0 5px 0;
+  color: #94a3b8;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.setting-item.setting-form button {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  background: #3b82f6;
+  color: white;
+  font-weight: 500;
+}
+
+.setting-item.setting-form button:hover {
+  background: #2563eb;
+}

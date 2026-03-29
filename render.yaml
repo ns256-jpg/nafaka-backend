@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: nafaka-backend
+    env: node
+    buildCommand: npm install && npm run prisma:generate && npm run prisma:migrate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        sync: false
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CALLBACK_URL
+        sync: false
+      - key: MPESA_B2C_INITIATOR_NAME
+        sync: false
+      - key: MPESA_B2C_SECURITY_CREDENTIAL
+        sync: false
+      - key: MPESA_B2C_QUEUE_TIMEOUT_URL
+        sync: false
+      - key: MPESA_B2C_RESULT_URL
+        sync: false
