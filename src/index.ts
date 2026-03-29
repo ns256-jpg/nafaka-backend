@@ -26,7 +26,17 @@ app.use(
     credentials: true,
   })
 );
-
+Replace it with:
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://nafaka-wallet.vercel.app",
+      process.env.FRONTEND_URL || "",
+    ],
+    credentials: true,
+  })
+);
 // ─── Rate Limiting ───────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
