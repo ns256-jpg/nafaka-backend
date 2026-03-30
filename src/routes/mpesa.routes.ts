@@ -12,7 +12,7 @@ router.post("/deposit", authenticate, async (req: AuthRequest, res: Response): P
   try {
     const { amount } = req.body;
 
-    if (!amount || amount < 10) {
+    if (!amount || amount < 1) {
       res.status(400).json({ error: "Minimum deposit amount is KES 1" });
       return;
     }
@@ -64,7 +64,7 @@ router.post("/withdraw", authenticate, async (req: AuthRequest, res: Response): 
   try {
     const { amount } = req.body;
 
-    if (!amount || amount < 10) {
+    if (!amount || amount < 1) {
       res.status(400).json({ error: "Minimum withdrawal amount is KES 1" });
       return;
     }
