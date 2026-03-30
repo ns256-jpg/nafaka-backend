@@ -38,9 +38,11 @@ export const initiateSTKPush = async (
   const { password, timestamp } = generatePassword();
 
   // Normalize phone: 07xx -> 2547xx
-  const normalizedPhone = phone.startsWith("0")
-    ? `254${phone.slice(1)}`
-    : phone;
+  const normalizedPhone = phone.startsWith("+254")
+  ? phone.replace("+", "")
+  : phone.startsWith("0")
+  ? `254${phone.slice(1)}`
+  : phone;
 
   const response = await axios.post(
     `${MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
@@ -92,9 +94,11 @@ export const initiateB2C = async (
 ): Promise<{ ConversationID: string; OriginatorConversationID: string; ResponseDescription: string }> => {
   const token = await getMpesaToken();
 
-  const normalizedPhone = phone.startsWith("0")
-    ? `254${phone.slice(1)}`
-    : phone;
+  const normalizedPhone = phone.startsWith("+254")
+  ? phone.replace("+", "")
+  : phone.startsWith("0")
+  ? `254${phone.slice(1)}`
+  : phone;
 
   const response = await axios.post(
     `${MPESA_BASE_URL}/mpesa/b2c/v1/paymentrequest`,
