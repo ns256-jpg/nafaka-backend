@@ -107,12 +107,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       res.status(401).json({ error: "Invalid email or password" });
       return;
     }
-
-    if (!user.isEmailVerified) {
-      res.status(403).json({ error: "Please verify your email before logging in" });
-      return;
-    }
-
+      
     const token = jwt.sign(
   { userId: user.id },
   process.env.JWT_SECRET as string,
