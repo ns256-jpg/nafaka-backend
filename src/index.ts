@@ -12,14 +12,16 @@ import notificationRoutes from "./routes/notification.routes";
 import analyticsRoutes from "./routes/analytics.routes";
 import rewardRoutes from "./routes/reward.routes";
 import settingsRoutes from "./routes/settings.routes";
+import vaultRoutes from "./routes/vault.routes";
+import adminRoutes from "./routes/admin.routes";
 
 dotenv.config();
 
 const app = express();
-app.set("trust proxy", 1);
 const PORT = process.env.PORT || 5000;
 
-// ─── Security ────────────────────────────────────────────────
+app.set("trust proxy", 1);
+
 app.use(helmet());
 app.use(
   cors({
@@ -32,7 +34,6 @@ app.use(
   })
 );
 
-// ─── Rate Limiting ───────────────────────────────────────────
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
@@ -40,11 +41,9 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-// ─── Body Parsing ────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Routes ──────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/transactions", transactionRoutes);
@@ -53,24 +52,17 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/rewards", rewardRoutes);
 app.use("/api/settings", settingsRoutes);
+app.use("/api/vault", vaultRoutes);
+app.use("/api/admin", adminRoutes);
 
-// ─── Health Check ────────────────────────────────────────────
 app.get("/health", (_req, res) => {
   res.json({ status: "NAFAKA API is running", timestamp: new Date().toISOString() });
 });
 
-// ─── Global Error Handler ────────────────────────────────────
-app.use(
-  (
-    err: Error,
-    _req: express.Request,
-    res: express.Response,
-    _next: express.NextFunction
-  ) => {
-    console.error("Unhandled error:", err.message);
-    res.status(500).json({ error: "Internal server error" });
-  }
-);
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("Unhandled error:", err.message);
+  res.status(500).json({ error: "Internal server error" });
+});
 
 app.listen(PORT, () => {
   console.log(`🚀 NAFAKA API running on port ${PORT}`);

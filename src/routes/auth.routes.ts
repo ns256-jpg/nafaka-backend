@@ -17,25 +17,20 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    // Validate username format
     const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
     if (!usernameRegex.test(username)) {
-      res.status(400).json({ error: "Username must be 3-20 characters, letters, numbers and underscores only" });
+      res.status(400).json({ error: "Username must be 3-20 characters, letters numbers and underscores only" });
       return;
     }
 
     const existingUser = await prisma.user.findFirst({
-      where: { OR: [{ email }, { phone }, { username }] },
+      where: { OR: [{ email }, { phone }, { username: username.toLowerCase() }] },
     });
 
     if (existingUser) {
-      if (existingUser.email === email) {
-        res.status(409).json({ error: "Email already registered" });
-      } else if (existingUser.phone === phone) {
-        res.status(409).json({ error: "Phone number already registered" });
-      } else {
-        res.status(409).json({ error: "Username already taken" });
-      }
+      if (existingUser.email === email) res.status(409).json({ error: "Email already registered" });
+      else if (existingUser.phone === phone) res.status(409).json({ error: "Phone number already registered" });
+      else res.status(409).json({ error: "Username already taken" });
       return;
     }
 
@@ -52,6 +47,7 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
         emailVerifyToken,
         isEmailVerified: true,
         wallet: { create: { balance: 0 } },
+        savingsVault: { create: { balance: 0 } },
       },
     });
 
@@ -63,6 +59,15 @@ router.post("/register", async (req: Request, res: Response): Promise<void> => {
         skipDuplicates: true,
       });
     }
+
+    // Welcome notification
+    await prisma.notification.create({
+      data: {
+        userId: user.id,
+        message: `Welcome to NAFAKA, ${fullName.split(" ")[0]}! 🎉 Your wallet is ready. Start by making your first deposit.`,
+        type: "INFO",
+      },
+    });
 
     try {
       await sendVerificationEmail(email, fullName, emailVerifyToken);
@@ -106,7 +111,11 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET as string, { expiresIn: "7d" });
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "7d" }
+    );
 
     res.json({
       token,
@@ -116,6 +125,7 @@ router.post("/login", async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         phone: user.phone,
         username: user.username,
+        role: user.role,
       },
     });
   } catch (err) {
@@ -139,11 +149,7 @@ router.post("/forgot-password", async (req: Request, res: Response): Promise<voi
       data: { resetPasswordToken: resetToken, resetPasswordExpiry: expiry },
     });
 
-    try {
-      await sendPasswordResetEmail(email, user.fullName, resetToken);
-    } catch {
-      console.error("Password reset email failed");
-    }
+    try { await sendPasswordResetEmail(email, user.fullName, resetToken); } catch {}
 
     res.json({ message: "If that email exists, a reset link has been sent." });
   } catch (err) {

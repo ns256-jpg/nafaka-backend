@@ -1,10 +1,29 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding rewards...");
+  console.log("Seeding database...");
 
+  // ─── Admin User ───────────────────────────────────────────
+  const adminPassword = await bcrypt.hash("Admin@Nafaka2026", 12);
+  const admin = await prisma.user.upsert({
+    where: { email: "admin@nafaka.co.ke" },
+    update: {},
+    create: {
+      fullName: "NAFAKA Admin",
+      email: "admin@nafaka.co.ke",
+      phone: "0700000000",
+      username: "nafaka_admin",
+      passwordHash: adminPassword,
+      role: "ADMIN",
+      isEmailVerified: true,
+    },
+  });
+  console.log("✅ Admin user created:", admin.email);
+
+  // ─── Rewards ──────────────────────────────────────────────
   await prisma.reward.createMany({
     data: [
       {
@@ -23,7 +42,7 @@ async function main() {
       },
       {
         name: "Cashback Offer",
-        description: "Get 5% cashback on deposits above KES 10,000",
+        description: "Get 5% cashback on your total deposits",
         points: 500,
         type: "CASHBACK",
         isActive: true,
@@ -31,7 +50,6 @@ async function main() {
     ],
     skipDuplicates: true,
   });
-
   console.log("✅ Rewards seeded.");
 }
 
