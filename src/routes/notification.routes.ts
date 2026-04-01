@@ -14,7 +14,6 @@ router.get("/", authenticate, async (req: AuthRequest, res: Response): Promise<v
     });
 
     const unreadCount = notifications.filter((n) => !n.isRead).length;
-
     res.json({ notifications, unreadCount });
   } catch (err) {
     console.error("Get notifications error:", err);
@@ -29,7 +28,6 @@ router.patch("/mark-all-read", authenticate, async (req: AuthRequest, res: Respo
       where: { userId: req.userId, isRead: false },
       data: { isRead: true },
     });
-
     res.json({ message: "All notifications marked as read" });
   } catch (err) {
     console.error("Mark read error:", err);
@@ -44,7 +42,6 @@ router.patch("/:id/read", authenticate, async (req: AuthRequest, res: Response):
       where: { id: req.params.id, userId: req.userId },
       data: { isRead: true },
     });
-
     res.json({ message: "Notification marked as read" });
   } catch (err) {
     console.error("Mark read error:", err);
