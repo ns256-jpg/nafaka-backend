@@ -78,10 +78,10 @@ router.get("/:id", authenticate, async (req: AuthRequest, res: Response): Promis
 // ─── POST /api/transactions/send ─────────────────────────────
 router.post("/send", authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { phone, amount, note } = req.body;
+    const { username, amount, note } = req.body;
 
-    if (!phone || !amount || amount < 1) {
-      res.status(400).json({ error: "Phone and amount are required" });
+    if (!username || !amount || amount < 1) {
+      res.status(400).json({ error: "Username and amount are required" });
       return;
     }
 
@@ -100,13 +100,54 @@ router.post("/send", authenticate, async (req: AuthRequest, res: Response): Prom
       return;
     }
 
+    // Check daily limit
+    if (sender.wallet.dailyLimit) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dailySpent = await prisma.transaction.aggregate({
+        where: {
+          userId: sender.id,
+          type: { in: ["SEND", "WITHDRAWAL"] },
+          status: "SUCCESS",
+          createdAt: { gte: today },
+        },
+        _sum: { amount: true },
+      });
+      const totalDailySpent = Number(dailySpent._sum.amount || 0) + amount;
+      if (totalDailySpent > Number(sender.wallet.dailyLimit)) {
+        res.status(400).json({ error: `Daily spending limit of KES ${Number(sender.wallet.dailyLimit).toLocaleString()} exceeded` });
+        return;
+      }
+    }
+
+    // Check monthly limit
+    if (sender.wallet.monthlyLimit) {
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+      const monthlySpent = await prisma.transaction.aggregate({
+        where: {
+          userId: sender.id,
+          type: { in: ["SEND", "WITHDRAWAL"] },
+          status: "SUCCESS",
+          createdAt: { gte: startOfMonth },
+        },
+        _sum: { amount: true },
+      });
+      const totalMonthlySpent = Number(monthlySpent._sum.amount || 0) + amount;
+      if (totalMonthlySpent > Number(sender.wallet.monthlyLimit)) {
+        res.status(400).json({ error: `Monthly spending limit of KES ${Number(sender.wallet.monthlyLimit).toLocaleString()} exceeded` });
+        return;
+      }
+    }
+
     const recipient = await prisma.user.findUnique({
-      where: { phone },
+      where: { username: username.toLowerCase().replace("@", "") },
       include: { wallet: true },
     });
 
     if (!recipient || !recipient.wallet) {
-      res.status(404).json({ error: "Recipient not found on NAFAKA" });
+      res.status(404).json({ error: "User not found on NAFAKA" });
       return;
     }
 
@@ -123,9 +164,9 @@ router.post("/send", authenticate, async (req: AuthRequest, res: Response): Prom
           userId: sender.id,
           type: "SEND",
           amount,
-          description: note || `Sent to ${recipient.fullName}`,
+          description: note || `Sent to @${recipient.username}`,
           status: "SUCCESS",
-          counterparty: recipient.phone,
+          counterparty: `@${recipient.username}`,
         },
       }),
       prisma.transaction.create({
@@ -133,26 +174,50 @@ router.post("/send", authenticate, async (req: AuthRequest, res: Response): Prom
           userId: recipient.id,
           type: "RECEIVE",
           amount,
-          description: note || `Received from ${sender.fullName}`,
+          description: note || `Received from @${sender.username}`,
           status: "SUCCESS",
-          counterparty: sender.phone,
+          counterparty: `@${sender.username}`,
         },
       }),
       prisma.notification.create({
         data: {
           userId: sender.id,
-          message: `You sent KES ${Number(amount).toLocaleString()} to ${recipient.fullName}.`,
+          message: `You sent KES ${Number(amount).toLocaleString()} to @${recipient.username} successfully.`,
+          type: "TRANSACTION",
+          link: "/transactions",
         },
       }),
       prisma.notification.create({
         data: {
           userId: recipient.id,
-          message: `You received KES ${Number(amount).toLocaleString()} from ${sender.fullName}.`,
+          message: `You received KES ${Number(amount).toLocaleString()} from @${sender.username}.`,
+          type: "TRANSACTION",
+          link: "/transactions",
         },
       }),
     ]);
 
-    res.json({ message: `KES ${Number(amount).toLocaleString()} sent to ${recipient.fullName} successfully!` });
+    // Check spending limits after transaction and warn if close
+    if (sender.wallet.dailyLimit) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dailySpent = await prisma.transaction.aggregate({
+        where: { userId: sender.id, type: { in: ["SEND", "WITHDRAWAL"] }, status: "SUCCESS", createdAt: { gte: today } },
+        _sum: { amount: true },
+      });
+      const percentage = (Number(dailySpent._sum.amount || 0) / Number(sender.wallet.dailyLimit)) * 100;
+      if (percentage >= 80 && percentage < 100) {
+        await prisma.notification.create({
+          data: {
+            userId: sender.id,
+            message: `⚠️ You have used ${percentage.toFixed(0)}% of your daily spending limit.`,
+            type: "WARNING",
+          },
+        });
+      }
+    }
+
+    res.json({ message: `KES ${Number(amount).toLocaleString()} sent to @${recipient.username} successfully!` });
   } catch (err) {
     console.error("Send error:", err);
     res.status(500).json({ error: "Failed to send money" });
@@ -162,32 +227,33 @@ router.post("/send", authenticate, async (req: AuthRequest, res: Response): Prom
 // ─── POST /api/transactions/request ──────────────────────────
 router.post("/request", authenticate, async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { phone, amount, note } = req.body;
+    const { username, amount, note } = req.body;
 
-    if (!phone || !amount || amount < 1) {
-      res.status(400).json({ error: "Phone and amount are required" });
+    if (!username || !amount || amount < 1) {
+      res.status(400).json({ error: "Username and amount are required" });
       return;
     }
 
     const requester = await prisma.user.findUnique({ where: { id: req.userId } });
     if (!requester) { res.status(404).json({ error: "User not found" }); return; }
 
-    const target = await prisma.user.findUnique({ where: { phone } });
-    if (!target) { res.status(404).json({ error: "User not found on NAFAKA" }); return; }
+    const target = await prisma.user.findUnique({
+      where: { username: username.toLowerCase().replace("@", "") },
+    });
 
-    if (target.id === req.userId) {
-      res.status(400).json({ error: "You cannot request money from yourself" });
-      return;
-    }
+    if (!target) { res.status(404).json({ error: "User not found on NAFAKA" }); return; }
+    if (target.id === req.userId) { res.status(400).json({ error: "You cannot request money from yourself" }); return; }
 
     await prisma.notification.create({
       data: {
         userId: target.id,
-        message: `${requester.fullName} is requesting KES ${Number(amount).toLocaleString()} from you. ${note ? `Note: ${note}` : ""}`,
+        message: `@${requester.username} is requesting KES ${Number(amount).toLocaleString()} from you.${note ? ` Note: ${note}` : ""}`,
+        type: "REQUEST",
+        link: "/transactions",
       },
     });
 
-    res.json({ message: `Money request sent to ${target.fullName} successfully!` });
+    res.json({ message: `Money request sent to @${target.username} successfully!` });
   } catch (err) {
     console.error("Request error:", err);
     res.status(500).json({ error: "Failed to send request" });
